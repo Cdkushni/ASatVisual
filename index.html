@@ -2,17 +2,32 @@
 <html>
 <head>
 	<script src="./satellite/dist/satellite.js"></script>
+    <script src="./3js_resources/three.js"></script>
+    <script src="./3js_resources/Projector.js"></script>
+    <script src="./3js_resources/CanvasRenderer.js"></script>
 	<title></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        a {
+            color:#0078ff;
+        }
+    </style>
 </head>
 <body>
-
 	<script>
 		var norad = '42734'
 	    var tleArray = ["1 42734U 98067MP  17271.37578549  .00053290  00000-0  67532-3 0  9991", "2 42734  51.6373 241.7621 0007335 317.3911  42.6512 15.58902816 19367"];
 	    var satname = 'Ex-Alta';
-	    var myLat = '';
-	    var myLng = '';
-	    var altitude = 0;
+	    var sat_latitudeStr = '';
+	    var sat_longitudeStr = '';
+	    var sat_altitude = 0;
 	    
 	    setInterval(sat, 1000);
 	    
@@ -62,16 +77,16 @@
 	        // Geodetic coords are accessed via `longitude`, `latitude`, `height`.
 	        var longitude = positionGd.longitude,
 	            latitude  = positionGd.latitude,
-	            height    = positionGd.height;
+	            altitude    = positionGd.height;
 	        
 	        //  Convert the RADIANS to DEGREES for pretty printing (appends "N", "S", "E", "W", etc).
-	        var longitudeStr = satellite.degreesLong(longitude),
-	            latitudeStr  = satellite.degreesLat(latitude);
+	        sat_longitudeStr = satellite.degreesLong(longitude),
+	           sat_latitudeStr  = satellite.degreesLat(latitude);
 	            
-	        console.log(longitudeStr + " " + latitudeStr + " " + height + " " + azimuth);
+	        //console.log(sat_longitudeStr + " " + sat_latitudeStr + " " + sat_altitude + " " + azimuth);
 	    
 	    }
 	</script>
-
+    <script src="./3js_resources/satellite_scene.js" type="text/javascript"></script>
 </body>
 </html>
