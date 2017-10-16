@@ -12,7 +12,7 @@ SEPARATION = 200,
 AMOUNTX = 10,
 AMOUNTY = 10,
 
-camera, scene, renderer;
+camera, cameraController, scene, renderer;
 
 var cube_sat;
 
@@ -29,84 +29,83 @@ function init() {
 
     camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 10000 );
     camera.position.z = 1000;
+    cameraController = new THREE.Object3D();
+    cameraController.add(camera);
 
     scene = new THREE.Scene();
+    scene.add(cameraController);
 
     renderer = new THREE.CanvasRenderer();
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
     container.appendChild( renderer.domElement );
 
-    // particles
-
-    var PI2 = Math.PI * 2;
-    var material = new THREE.SpriteCanvasMaterial( {
-
-        color: 0xff0000,
-        program: function ( context ) {
-
-            context.beginPath();
-            context.arc( 0, 0, 0.5, 0, PI2, true );
-            context.fill();
-
-        }
-
-    } );
-
-    for ( var i = 0; i < 1000; i ++ ) {
-
-        particle = new THREE.Sprite( material );
-        particle.position.x = Math.random() * 2 - 1;
-        particle.position.y = Math.random() * 2 - 1;
-        particle.position.z = Math.random() * 2 - 1;
-        particle.position.normalize();
-        particle.position.multiplyScalar( Math.random() * 10 + 450 );
-        particle.scale.multiplyScalar( 2 );
-        scene.add( particle );
-
-    }
-
-    // lines
-
-    for (var i = 0; i < 300; i++) {
-
-        var geometry = new THREE.Geometry();
-
-        var vertex = new THREE.Vector3( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
-        vertex.normalize();
-        vertex.multiplyScalar( 450 );
-
-        geometry.vertices.push( vertex );
-
-        var vertex2 = vertex.clone();
-        vertex2.multiplyScalar( Math.random() * 0.3 + 1 );
-
-        geometry.vertices.push( vertex2 );
-
-        var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0x00ff00, opacity: Math.random() } ) );
-        scene.add( line );
-    }
-
     var geometry = new THREE.SphereGeometry( 455, 32, 32 );
     var material = new THREE.MeshPhongMaterial()
     material.map = THREE.ImageUtils.loadTexture('3js_resources/textures/Albedo.jpg')
     // var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
     var cube = new THREE.Mesh( geometry, material );
+//    cube.rotation.y += 0.4;
+//    cube.rotation.z += 0.15;
+//    cube.rotation.x += 0;
     scene.add( cube );
     
-    var geometry = new THREE.SphereGeometry( 5, 32, 32 );
-    var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-    cube_sat = new THREE.Mesh( geometry, material );
-    scene.add( cube_sat );
+    var loader = new THREE.JSONLoader();
+    loader.load('3js_resources/model/ExAlta1_low.json', function(geometry) {
+        //cube_sat = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+        //cube_sat = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(materials));
+		cube_sat = new THREE.Mesh(geometry);
+        console.log("Meow", ": ", cube_sat);
+        if (cube_sat != null) {
+            scene.add( cube_sat );
+        }
+        
+    });
+    
+    if (cube_sat == null) {
+        var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+        var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+        cube_sat = new THREE.Mesh( geometry, material );
+        scene.add( cube_sat );
+    }
+    
 
+    // change to a key event listener or look up a better way to do this
     document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     document.addEventListener( 'touchstart', onDocumentTouchStart, false );
     document.addEventListener( 'touchmove', onDocumentTouchMove, false );
 
+    document.addEventListener( 'keydown', onGetKeyDown );
     //
-
     window.addEventListener( 'resize', onWindowResize, false );
 
+}
+
+function onGetKeyDown ( event ) {
+    var inputkeyCode = event.keyCode;
+    if (inputkeyCode == 39) {
+        // right arrow key
+        cameraController.rotation.y += 0.04;
+    } else if (inputkeyCode == 37) {
+        // left arrow key
+        cameraController.rotation.y -= 0.04;
+    } else if (inputkeyCode == 38) {
+        // up arrow key
+        cameraController.rotation.x += 0.04;
+    } else if (inputkeyCode == 40) {
+        // down arrow key
+        cameraController.rotation.x -= 0.04;
+    } else if (inputkeyCode == 73) {
+        // i key
+        cameraController.scale.x += 0.04;
+        cameraController.scale.y += 0.04;
+        cameraController.scale.z += 0.04;
+    } else if (inputkeyCode == 75) {
+        // k key
+        cameraController.scale.x -= 0.04;
+        cameraController.scale.y -= 0.04;
+        cameraController.scale.z -= 0.04;
+    }
 }
 
 function latLongToCoords(latitude, longitude, radius) {
@@ -139,8 +138,10 @@ function onWindowResize() {
 
 function onDocumentMouseMove(event) {
 
-    mouseX = event.clientX - windowHalfX;
-    mouseY = event.clientY - windowHalfY;
+    //mouseX = event.clientX - windowHalfX;
+    //mouseY = event.clientY - windowHalfY;
+    mouseX += event.clientX - windowHalfX*0.5;
+    mouseY += event.clientY - windowHalfY*0.5;
 }
 
 function onDocumentTouchStart( event ) {
@@ -170,12 +171,15 @@ function onDocumentTouchMove( event ) {
 }
 
 function updateSatellite() {
-    sat_coords = latLongToCoords(sat_latitudeStr, sat_longitudeStr, earthRadius);
+    sat_coords = latLongToCoords(sat_latitudeStr, sat_longitudeStr, earthRadius + 60);
     
     cube_sat.position.x = sat_coords[0];
     cube_sat.position.y = sat_coords[1];
     cube_sat.position.z = sat_coords[2];
-    console.log(sat_coords);
+    cameraController.position.x = cube_sat.position.x;
+    cameraController.position.y = cube_sat.position.y;
+    cameraController.position.z = cube_sat.position.z;
+    //console.log(sat_coords);
 }
 
 //
@@ -192,9 +196,14 @@ function render() {
     
     updateSatellite();
 
-    camera.position.x += ( mouseX - camera.position.x ) * .05;
-    camera.position.y += ( - mouseY + 200 - camera.position.y ) * .05;
-    camera.lookAt( scene.position );
+//    camera.position.x += ( mouseX - camera.position.x ) * 0.05;
+//    camera.position.y += ( - mouseY + 200 - camera.position.y ) * 0.05;
+//    cameraController.rotation.x += ( mouseX - camera.position.x ) * 0.000001;
+//    cameraController.rotation.y += ( - mouseY + 200 - camera.position.y ) * 0.000001;
+    //camera.position.x = sat_coords[0]+200;
+    //camera.position.y = sat_coords[1]+200;
+    //camera.position.z = sat_coords[2]+200;
+    camera.lookAt( cube_sat.position );
 
     renderer.render( scene, camera );
 
